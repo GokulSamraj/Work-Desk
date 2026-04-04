@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: check if user is admin
+    function isAdmin() {
+      return isAuth() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper: check if user is active
+    function isActive() {
+      return isAuth() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow read: if isAuth() && isActive();
+      allow create: if isAuth() && isActive();
+      allow update: if isAuth() && isActive();
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.assignedBy == request.auth.uid);
+    }
+
+    // Notifications collection
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth();
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // Mail collection (for email triggers)
+    match /mail/{mailId} {
+      allow create: if isAuth();
+      allow read: if isAdmin();
+    }
+
+    // Active timer - global single doc
+    match /activeTimer/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isActive();
+    }
+  }
+}
