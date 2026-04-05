@@ -6,6 +6,10 @@
         <span class="badge bg-surface-700 text-surface-300 border border-surface-600 font-mono">
           {{ filteredTasks.length }} tasks
         </span>
+        <span class="badge bg-surface-700 text-surface-300 border border-surface-600 font-mono flex items-center gap-1.5" title="Total time utilized">
+          <Clock :size="12" />
+          {{ formatTimer(totalTimeUtilized) }}
+        </span>
         <!-- Running task indicator -->
         <div v-if="tasksStore.activeTimer" class="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full shadow-sm">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -45,11 +49,39 @@
         </select>
 
         <!-- Date filter -->
-        <select v-model="filterDate" class="select py-1.5 text-sm w-36">
-          <option value="all">All Dates</option>
-          <option value="today">Today & Past Due</option>
-          <option value="future">Future Only</option>
-        </select>
+        <div class="flex items-center gap-2">
+          <select v-model="filterDate" class="select py-1.5 text-sm w-36">
+            <option value="all">All Dates</option>
+            <option value="today">Today & Past Due</option>
+            <option value="future">Future Only</option>
+            <option value="custom">Custom Range</option>
+          </select>
+          
+          <ClientOnly>
+            <div v-if="filterDate === 'custom'" class="relative z-50">
+              <VueDatePicker 
+                v-model="filterDateRange" 
+                range 
+                :week-start="0" 
+                :enable-time-picker="false"
+                auto-apply
+              >
+                <template #trigger>
+                  <div class="select py-1.5 px-3 text-sm flex items-center justify-between gap-2 min-w-[220px]">
+                    <div class="flex items-center gap-2">
+                      <Calendar :size="14" class="text-surface-400" />
+                      <span v-if="filterDateRange && filterDateRange.length > 0" class="text-surface-100">
+                        {{ new Date(filterDateRange[0]).toLocaleDateString() }} - {{ filterDateRange[1] ? new Date(filterDateRange[1]).toLocaleDateString() : '...' }}
+                      </span>
+                      <span v-else class="text-surface-500">Select Date Range...</span>
+                    </div>
+                    <X v-if="filterDateRange && filterDateRange.length > 0" @click.stop="filterDateRange = null" :size="14" class="text-surface-400 hover:text-surface-200 transition-colors shrink-0" />
+                  </div>
+                </template>
+              </VueDatePicker>
+            </div>
+          </ClientOnly>
+        </div>
 
         <!-- Clear filters -->
         <button v-if="hasFilters" @click="clearFilters" class="btn-ghost py-1.5 text-surface-500">
@@ -213,7 +245,7 @@
 </template>
 
 <script setup>
-import { Search, Plus, X, LayoutGrid, List, Play, Pause, ClipboardList } from 'lucide-vue-next'
+import { Search, Plus, X, LayoutGrid, List, Play, Pause, ClipboardList, Calendar, Clock } from 'lucide-vue-next'
 import AppLayout from '~/components/AppLayout.vue'
 import TaskCard from '~/components/TaskCard.vue'
 import CreateTaskModal from '~/components/CreateTaskModal.vue'
@@ -225,6 +257,9 @@ import {
   statusClass, avatarColor, initials, formatDate, timeAgo, formatTimer
 } from '~/utils/helpers'
 import { logAction } from '~/firebase/firestore'
+
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
 
 definePageMeta({
   requiresAuth: true,
@@ -241,6 +276,7 @@ const filterAssignee = ref('')
 const filterStatus = ref('')
 const filterPriority = ref('')
 const filterDate = ref('today') // Default based on user preference
+const filterDateRange = ref(null)
 const userList = ref([])
 
 onMounted(async () => {
@@ -248,13 +284,17 @@ onMounted(async () => {
   filterAssignee.value = authStore.user?.uid || '' // Default filter for users should be their user name
 })
 
-watch([filterAssignee, filterStatus, filterPriority, filterDate], () => {
+watch([filterAssignee, filterStatus, filterPriority, filterDate, filterDateRange], () => {
   if (!authStore.user) return
+  let rangeStr = ''
+  if (filterDate.value === 'custom' && filterDateRange.value?.length) {
+    rangeStr = ' ' + new Date(filterDateRange.value[0]).toLocaleDateString() + ' - ' + new Date(filterDateRange.value[1]).toLocaleDateString()
+  }
   logAction(
     authStore.user.uid, 
     authStore.user.name, 
     'filter_changed', 
-    `Filters: [Assignee: ${filterAssignee.value || 'All'}], [Status: ${filterStatus.value || 'All'}], [Priority: ${filterPriority.value || 'All'}], [Date: ${filterDate.value}]`
+    `Filters: [Assignee: ${filterAssignee.value || 'All'}], [Status: ${filterStatus.value || 'All'}], [Priority: ${filterPriority.value || 'All'}], [Date: ${filterDate.value}${rangeStr}]`
   ).catch(()=>{})
 })
 
@@ -272,7 +312,7 @@ async function toggleViewMode(mode) {
 }
 
 const hasFilters = computed(() =>
-  search.value || filterAssignee.value || filterStatus.value || filterPriority.value || filterDate.value !== 'today'
+  search.value || filterAssignee.value || filterStatus.value || filterPriority.value || filterDate.value !== 'today' || (filterDate.value === 'custom' && filterDateRange.value !== null)
 )
 
 function clearFilters() {
@@ -281,6 +321,7 @@ function clearFilters() {
   filterStatus.value = ''
   filterPriority.value = ''
   filterDate.value = 'today'
+  filterDateRange.value = null
 }
 
 const filteredTasks = computed(() => {
@@ -297,6 +338,15 @@ const filteredTasks = computed(() => {
         if (taskDate > today) return false
       } else if (filterDate.value === 'future') {
         if (taskDate <= today) return false
+      } else if (filterDate.value === 'custom') {
+        if (filterDateRange.value && filterDateRange.value.length === 2 && filterDateRange.value[0] && filterDateRange.value[1]) {
+          const start = new Date(filterDateRange.value[0])
+          start.setHours(0, 0, 0, 0)
+          const end = new Date(filterDateRange.value[1])
+          end.setHours(23, 59, 59, 999)
+          
+          if (taskDate < start || taskDate > end) return false
+        }
       }
       // 'all' passes through
     } else {
@@ -314,6 +364,12 @@ const filteredTasks = computed(() => {
     }
     return true
   })
+})
+
+const totalTimeUtilized = computed(() => {
+  return filteredTasks.value.reduce((total, task) => {
+    return total + (tasksStore.getDisplayTime(task) || 0)
+  }, 0)
 })
 
 const tasksByStatus = computed(() => {
