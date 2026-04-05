@@ -1,8 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
+    './app.vue',
+    './pages/**/*.{vue,js,ts}',
+    './components/**/*.{vue,js,ts}',
+    './layouts/**/*.{vue,js,ts}',
+    './plugins/**/*.{js,ts}',
+    './composables/**/*.{js,ts}',
   ],
   darkMode: 'class',
   theme: {
@@ -13,30 +17,30 @@ export default {
       },
       colors: {
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          200: '#e5e7eb',
+          300: '#d1d5db',
+          400: '#9ca3af',
+          500: '#6b7280',
+          600: '#1f2937', // almost black for primary buttons
+          700: '#111827',
+          800: '#030712',
+          900: '#000000',
         },
         surface: {
-          0: '#ffffff',
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617',
+          950: '#f3f4f6', // Main Background (Gray 100)
+          900: '#e5e7eb', // Sidebar / Inputs (Gray 200)
+          800: '#ffffff', // Cards (White)
+          700: '#d1d5db', // borders / subtle hover
+          600: '#9ca3af',
+          500: '#6b7280',
+          400: '#4b5563', // Muted text
+          300: '#374151', // Normal text
+          200: '#1f2937',
+          100: '#111827', // Text strong
+          50: '#030712',  // Text strongest
+          0: '#000000',
         }
       },
       animation: {
@@ -72,8 +76,8 @@ export default {
       boxShadow: {
         'card': '0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)',
         'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'modal': '0 20px 60px -10px rgb(0 0 0 / 0.3)',
-        'dropdown': '0 10px 25px -5px rgb(0 0 0 / 0.15), 0 4px 10px -5px rgb(0 0 0 / 0.1)',
+        'modal': '0 20px 60px -10px rgb(0 0 0 / 0.5)',
+        'dropdown': '0 10px 25px -5px rgb(0 0 0 / 0.3), 0 4px 10px -5px rgb(0 0 0 / 0.2)',
       }
     },
   },

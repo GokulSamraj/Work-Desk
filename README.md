@@ -1,28 +1,31 @@
-# TaskFlow — Jira-like Project Management App
+# TaskFlow — Team Task Management
 
-A full-featured project management application built with Vue 3, Firebase, and Tailwind CSS.
+A full-featured project management app built with **Nuxt 3**, Firebase, and Tailwind CSS.
+
+> **Light Theme UI** — Features a beautiful, clean, modern light theme with carefully chosen grays, encrypted task data, and automatic Google provisioning.
+
+---
 
 ## ✨ Features
 
-- **Authentication** — Firebase Auth (Email/Password), role-based (admin / user)
-- **Admin Panel** — Create, manage, and deactivate team members
-- **Task Board** — Kanban board + list view with real-time updates
-- **Task Timer** — Global single-timer enforcement, live HH:MM:SS display
-- **Notifications** — In-app bell + email via Firebase Extension
-- **Filters** — By assignee, status, priority, search
-- **Task Detail** — Inline editing, timer controls, full metadata
+- **Authentication** — Firebase Auth with **Google Sign-In only**. First time logging in as `gokul_s@lmes.in` will automatically grant super-admin status.
+- **Data Encryption** — Client-side AES encryption for Task titles, descriptions, Notifications, and Mail elements.
+- **Admin Panel** — Create, manage, activate/deactivate, and delete team members + graphical role analysis with `vue-chartjs`.
+- **Task Board** — Kanban board + list view with real-time Firestore updates and intelligent Date filtering.
+- **Task Timer** — Global single-timer enforcement, instantly stored in DB upon pause.
+- **Notifications** — In-app bell with unread badge + email via Firebase Extension.
+
+---
 
 ## 🛠 Tech Stack
 
-- Vue 3 (Composition API, `<script setup>`)
-- Vue Router 4 (with auth guards)
-- Pinia (state management)
-- Firebase v10 (Auth + Firestore)
-- Tailwind CSS 3
-- Vite 5
-- Lucide Vue icons
-- date-fns
-- @vueuse/core
+| Layer | Technology |
+|---|---|
+| Framework | Nuxt 3 (SPA mode, SSR disabled) |
+| Language | Vue 3 Composition API (`<script setup>`) |
+| Encryption | crypto-js |
+| Database | Firebase v10 (Firestore) |
+| Layout / Visuals | Tailwind CSS 3, Chart.js, vue-chartjs |
 
 ---
 
@@ -34,7 +37,7 @@ A full-featured project management application built with Vue 3, Firebase, and T
 npm install
 ```
 
-### 2. Configure Firebase
+### 2. Configure Firebase & Secrets
 
 Copy the environment template and fill in your Firebase project values:
 
@@ -42,149 +45,47 @@ Copy the environment template and fill in your Firebase project values:
 cp .env.example .env.local
 ```
 
-Edit `.env.local`:
-```
+Edit `.env.local` to include Firebase config AND your encryption key:
+```env
+VITE_ENCRYPTION_KEY=your_secret_encryption_key
 VITE_FIREBASE_API_KEY=AIza...
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+...
 ```
 
 ### 3. Firebase Console Setup
 
-#### a) Authentication
-1. Go to Firebase Console → Authentication → Sign-in method
-2. Enable **Email/Password**
+- **Authentication**: Enable Google OAuth.
+- **Firestore**: Deploy a production-ready Firestore database.
 
-#### b) Firestore
-1. Go to Firestore Database → Create database
-2. Start in **production mode**
-3. Deploy security rules: `firebase deploy --only firestore:rules`
-4. Deploy indexes: `firebase deploy --only firestore:indexes`
+### 4. Admin Setup (Automatic)
 
-#### c) Create First Admin User
-Since there's no self-registration, create the first admin manually:
+- Click `Continue with Google` and login with `gokul_s@lmes.in`.
+- Your admin account is automatically configured! You can navigate to the Admin Dashboard and start inviting users.
 
-1. Firebase Console → Authentication → Add user
-   - Email: `admin@yourcompany.com`
-   - Password: (set a strong password)
-   - Copy the UID
-
-2. Firebase Console → Firestore → Create document:
-   - Collection: `users`
-   - Document ID: (paste the UID from step 1)
-   - Fields:
-     ```
-     name: "Admin User"        (string)
-     email: "admin@..."        (string)
-     role: "admin"             (string)
-     active: true              (boolean)
-     createdAt: (server timestamp)
-     ```
-
-#### d) (Optional) Email Notifications
-1. In Firebase Console → Extensions
-2. Install **"Trigger Email from Firestore"**
-3. Configure it to watch the `mail` collection
-4. Set your SMTP credentials (e.g. SendGrid, Mailgun)
-
-### 4. Run the app
+### 5. Run the app
 
 ```bash
 npm run dev
 ```
 
----
-
-## 📁 Project Structure
-
-```
-src/
-├── assets/
-│   └── main.css              # Tailwind + component classes
-├── components/
-│   ├── AppLayout.vue         # Sidebar + navbar + notifications
-│   ├── TaskCard.vue          # Task card with timer controls
-│   └── CreateTaskModal.vue   # New task modal form
-├── firebase/
-│   ├── config.js             # Firebase initialization
-│   ├── auth.js               # Auth functions
-│   └── firestore.js          # All Firestore operations
-├── router/
-│   └── index.js              # Routes + guards
-├── stores/
-│   ├── auth.js               # Auth Pinia store
-│   ├── tasks.js              # Tasks + timer Pinia store
-│   └── notifications.js      # Notifications Pinia store
-├── utils/
-│   └── helpers.js            # Formatters, color maps
-└── views/
-    ├── LoginView.vue          # User login page
-    ├── AdminLoginView.vue     # Admin login page
-    ├── AdminDashboardView.vue # User management
-    ├── DashboardView.vue      # Main task board
-    └── TaskDetailView.vue     # Task detail + inline edit
-```
+App will be available at **http://localhost:3000**.
 
 ---
 
-## 🗄 Firestore Structure
-
-```
-/users/{uid}
-  name, email, role, createdAt, active
-
-/tasks/{taskId}
-  title, description, assignedTo, assignedToName,
-  assignedBy, assignedByName, priority, status,
-  dueDate, createdAt, updatedAt, lastUpdatedBy,
-  timerStatus, totalElapsed, lastStarted
-
-/notifications/{id}
-  userId, taskId, taskTitle, message, read, createdAt
-
-/mail/{id}
-  to, message: { subject, html }   ← triggers email extension
-
-/activeTimer/current
-  taskId, startedAt
-```
-
----
-
-## 🔐 Routes
+## 🔐 Routes & Access Control
 
 | Path | Access | Description |
 |---|---|---|
-| `/login` | Guest | User login |
-| `/admin` | Guest | Admin login |
-| `/admin/dashboard` | Admin only | User management |
-| `/dashboard` | Auth | Task board |
-| `/task/:id` | Auth | Task detail |
+| `/` | Any | Instant redirect → `/login` |
+| `/login` | Guest only | User sign-in (redirects away if logged in) |
+| `/dashboard` | **Auth required** | Task board with "Current day + Previously pending" filters |
+| `/admin/dashboard` | **Admin only** | User management panel + Analysis Graph |
 
 ---
 
-## 🎨 Design Notes
+## ⚠️ Known Behaviour
 
-- **Priority colors**: Low → Green, Medium → Amber, High → Orange, Urgent → Red
-- **Status colors**: To Do → Gray, In Progress → Blue, In Review → Purple, Done → Green
-- **Running timer** pulses with `ring-2 ring-brand-400/40` animation
-- **Timer display**: `HH:MM:SS` in monospace font, updates every second via `setInterval`
-- **Global timer enforcement**: Starting a new timer auto-pauses the running one via Firestore batch write
-
----
-
-## 📧 Email Notification Format
-
-When a task is assigned, writes to `/mail` collection:
-```json
-{
-  "to": "assignee@company.com",
-  "message": {
-    "subject": "[TaskFlow] New task assigned: <title>",
-    "html": "...styled HTML email with task details and link..."
-  }
-}
-```
+| Message | Cause | Action |
+|---|---|---|
+| `ERR_BLOCKED_BY_CLIENT` on Firestore URLs | **Ad blocker** blocking Firebase WebSocket connections | Disable ad blockers |
+| `Cross-Origin-Opener-Policy would block window.closed` | Browser COOP policy vs Google popup | Safe to ignore, handled correctly. |
