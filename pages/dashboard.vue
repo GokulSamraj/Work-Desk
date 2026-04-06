@@ -23,99 +23,104 @@
 
     <div class="space-y-5">
       <!-- Toolbar -->
-      <div class="flex items-center gap-3 flex-wrap">
-        <!-- Search -->
-        <div class="relative">
-          <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
-          <input v-model="search" placeholder="Search tasks..." class="input pl-9 py-1.5 text-sm w-56" />
-        </div>
+      <div class="space-y-3">
+        <!-- Row 1: Search, Filters, View, Create -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Search -->
+          <div class="relative">
+            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
+            <input v-model="search" placeholder="Search tasks..." class="input pl-9 py-1.5 text-sm w-56" />
+          </div>
 
-        <!-- Assignee filter -->
-        <select v-model="filterAssignee" class="select py-1.5 text-sm w-40">
-          <option value="">All Assignees</option>
-          <option v-for="u in userList" :key="u.uid" :value="u.uid">{{ u.name }}</option>
-        </select>
-
-        <!-- Status filter -->
-        <select v-model="filterStatus" class="select py-1.5 text-sm w-36">
-          <option value="">All Statuses</option>
-          <option v-for="s in STATUSES" :key="s" :value="s">{{ s }}</option>
-        </select>
-
-        <!-- Priority filter -->
-        <select v-model="filterPriority" class="select py-1.5 text-sm w-36">
-          <option value="">All Priorities</option>
-          <option v-for="p in PRIORITIES" :key="p" :value="p">{{ p }}</option>
-        </select>
-
-        <!-- Date filter -->
-        <div class="flex items-center gap-2">
-          <select v-model="filterDate" class="select py-1.5 text-sm w-36">
-            <option value="all">All Dates</option>
-            <option value="today">Today & Past Due</option>
-            <option value="future">Future Only</option>
-            <option value="custom">Custom Range</option>
+          <!-- Assignee filter -->
+          <select v-model="filterAssignee" class="select py-1.5 text-sm w-40">
+            <option value="">All Assignees</option>
+            <option v-for="u in userList" :key="u.uid" :value="u.uid">{{ u.name }}</option>
           </select>
-          
-          <ClientOnly>
-            <div v-if="filterDate === 'custom'" class="relative z-50">
-              <VueDatePicker 
-                v-model="filterDateRange" 
-                range 
-                :week-start="0" 
-                :enable-time-picker="false"
-                auto-apply
-              >
-                <template #trigger>
-                  <div class="select py-1.5 px-3 text-sm flex items-center justify-between gap-2 min-w-[220px]">
-                    <div class="flex items-center gap-2">
-                      <Calendar :size="14" class="text-surface-400" />
-                      <span v-if="filterDateRange && filterDateRange.length > 0" class="text-surface-100">
-                        {{ new Date(filterDateRange[0]).toLocaleDateString() }} - {{ filterDateRange[1] ? new Date(filterDateRange[1]).toLocaleDateString() : '...' }}
-                      </span>
-                      <span v-else class="text-surface-500">Select Date Range...</span>
+
+          <!-- Status filter -->
+          <select v-model="filterStatus" class="select py-1.5 text-sm w-36">
+            <option value="">All Statuses</option>
+            <option v-for="s in STATUSES" :key="s" :value="s">{{ s }}</option>
+          </select>
+
+          <!-- Priority filter -->
+          <select v-model="filterPriority" class="select py-1.5 text-sm w-36">
+            <option value="">All Priorities</option>
+            <option v-for="p in PRIORITIES" :key="p" :value="p">{{ p }}</option>
+          </select>
+
+          <!-- Date filter -->
+          <div class="flex items-center gap-2">
+            <select v-model="filterDate" class="select py-1.5 text-sm w-36">
+              <option value="all">All Dates</option>
+              <option value="today">Today & Past Due</option>
+              <option value="future">Future Only</option>
+              <option value="custom">Custom Range</option>
+            </select>
+
+            <ClientOnly>
+              <div v-if="filterDate === 'custom'" class="relative z-50">
+                <VueDatePicker
+                  v-model="filterDateRange"
+                  range
+                  :week-start="0"
+                  :enable-time-picker="false"
+                  auto-apply
+                >
+                  <template #trigger>
+                    <div class="select py-1.5 px-3 text-sm flex items-center justify-between gap-2 min-w-[220px]">
+                      <div class="flex items-center gap-2">
+                        <Calendar :size="14" class="text-surface-400" />
+                        <span v-if="filterDateRange && filterDateRange.length > 0" class="text-surface-100">
+                          {{ new Date(filterDateRange[0]).toLocaleDateString() }} - {{ filterDateRange[1] ? new Date(filterDateRange[1]).toLocaleDateString() : '...' }}
+                        </span>
+                        <span v-else class="text-surface-500">Select Date Range...</span>
+                      </div>
+                      <X v-if="filterDateRange && filterDateRange.length > 0" @click.stop="filterDateRange = null" :size="14" class="text-surface-400 hover:text-surface-200 transition-colors shrink-0" />
                     </div>
-                    <X v-if="filterDateRange && filterDateRange.length > 0" @click.stop="filterDateRange = null" :size="14" class="text-surface-400 hover:text-surface-200 transition-colors shrink-0" />
-                  </div>
-                </template>
-              </VueDatePicker>
-            </div>
-          </ClientOnly>
-        </div>
+                  </template>
+                </VueDatePicker>
+              </div>
+            </ClientOnly>
+          </div>
 
-        <!-- Clear filters -->
-        <button v-if="hasFilters" @click="clearFilters" class="btn-ghost py-1.5 text-surface-500">
-          <X :size="14" />
-          Clear
-        </button>
-
-        <div class="flex-1"></div>
-
-        <!-- Sort -->
-        <select v-model="sortBy" class="select py-1.5 text-sm w-40">
-          <option value="newest">Newest First</option>
-          <option value="oldest">Oldest First</option>
-          <option value="dueDate">Due Date</option>
-          <option value="priority">Priority</option>
-          <option value="title">Title A-Z</option>
-          <option value="timer">Most Tracked</option>
-        </select>
-
-        <!-- View toggle -->
-        <div class="flex items-center bg-surface-800 rounded-lg p-1 gap-1">
-          <button @click="toggleViewMode('board')" :class="['p-1.5 rounded-md transition-colors', viewMode === 'board' ? 'bg-surface-700 shadow-sm text-surface-100' : 'text-surface-500 hover:text-surface-300']">
-            <LayoutGrid :size="15" />
+          <!-- Clear filters -->
+          <button v-if="hasFilters" @click="clearFilters" class="btn-ghost py-1.5 text-surface-500">
+            <X :size="14" />
+            Clear
           </button>
-          <button @click="toggleViewMode('list')" :class="['p-1.5 rounded-md transition-colors', viewMode === 'list' ? 'bg-surface-700 shadow-sm text-surface-100' : 'text-surface-500 hover:text-surface-300']">
-            <List :size="15" />
+
+          <div class="flex-1"></div>
+
+          <!-- View toggle -->
+          <div class="flex items-center bg-surface-800 rounded-lg p-1 gap-1">
+            <button @click="toggleViewMode('board')" :class="['p-1.5 rounded-md transition-colors', viewMode === 'board' ? 'bg-surface-700 shadow-sm text-surface-100' : 'text-surface-500 hover:text-surface-300']">
+              <LayoutGrid :size="15" />
+            </button>
+            <button @click="toggleViewMode('list')" :class="['p-1.5 rounded-md transition-colors', viewMode === 'list' ? 'bg-surface-700 shadow-sm text-surface-100' : 'text-surface-500 hover:text-surface-300']">
+              <List :size="15" />
+            </button>
+          </div>
+
+          <!-- Create Task -->
+          <button @click="showCreate = true" class="btn-primary">
+            <Plus :size="16" />
+            Create Task
           </button>
         </div>
 
-        <!-- Create Task -->
-        <button @click="showCreate = true" class="btn-primary">
-          <Plus :size="16" />
-          Create Task
-        </button>
+        <!-- Row 2: Sort -->
+        <div class="flex items-center gap-3">
+          <select v-model="sortBy" class="select py-1.5 text-sm w-40">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="dueDate">Due Date</option>
+            <option value="priority">Priority</option>
+            <option value="title">Title A-Z</option>
+            <option value="timer">Most Tracked</option>
+          </select>
+        </div>
       </div>
 
       <!-- BOARD VIEW -->
@@ -371,7 +376,18 @@ const filteredTasks = computed(() => {
       }
       // 'all' passes through
     } else {
-      if (filterDate.value === 'future') return false // No due date implies shouldn't be counted as future
+      // No due date — use createdAt for date filtering
+      if (filterDate.value === 'future') return false
+      if (filterDate.value === 'custom') {
+        const taskCreated = new Date(timeToMs(task.createdAt))
+        if (filterDateRange.value && filterDateRange.value.length === 2 && filterDateRange.value[0] && filterDateRange.value[1]) {
+          const start = new Date(filterDateRange.value[0])
+          start.setHours(0, 0, 0, 0)
+          const end = new Date(filterDateRange.value[1])
+          end.setHours(23, 59, 59, 999)
+          if (taskCreated < start || taskCreated > end) return false
+        }
+      }
     }
 
     if (filterAssignee.value && task.assignedTo !== filterAssignee.value) return false
