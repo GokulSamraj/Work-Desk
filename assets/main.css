@@ -43,27 +43,27 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white font-medium text-sm rounded-lg hover:bg-brand-500 active:bg-brand-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-surface-700 text-surface-200 font-medium text-sm rounded-lg hover:bg-surface-600 active:bg-surface-800 transition-colors duration-150 border border-surface-600;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 border border-gray-300 shadow-sm;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center gap-2 px-3 py-2 text-surface-400 font-medium text-sm rounded-lg hover:bg-surface-800 active:bg-surface-700 transition-colors duration-150;
+    @apply inline-flex items-center gap-2 px-3 py-2 text-gray-500 font-medium text-sm rounded-lg hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200 transition-colors duration-150;
   }
 
   .btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-medium text-sm rounded-lg hover:bg-red-700 transition-colors duration-150;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-medium text-sm rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors duration-150;
   }
 
   .input {
-    @apply w-full px-3 py-2 bg-surface-900 border border-surface-700 rounded-lg text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all duration-150;
+    @apply w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all duration-150;
   }
 
   .select {
-    @apply w-full px-3 py-2 bg-surface-900 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all duration-150 cursor-pointer;
+    @apply w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all duration-150 cursor-pointer;
   }
 
   .label {
@@ -104,7 +104,7 @@
   }
 
   .nav-link.active {
-    @apply bg-brand-50 text-brand-600 font-bold shadow-sm;
+    @apply bg-indigo-50 text-indigo-700 font-bold shadow-sm;
   }
 }
 

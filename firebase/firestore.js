@@ -106,12 +106,12 @@ export function subscribeToActiveTimer(callback) {
   })
 }
 
-export async function startTimer(taskId, currentElapsed) {
+export async function startTimer(taskId, currentElapsed, userId) {
   const batch = writeBatch(db)
 
-  // Set global active timer
   batch.set(doc(db, 'activeTimer', 'current'), {
     taskId,
+    userId,
     startedAt: serverTimestamp(),
   })
 
@@ -156,7 +156,7 @@ export async function stopTimer(taskId, totalElapsed) {
 }
 
 // When starting a new timer, pause any currently running one first
-export async function switchTimer(newTaskId, currentlyRunningTaskId, currentRunningElapsed, newTaskElapsed) {
+export async function switchTimer(newTaskId, currentlyRunningTaskId, currentRunningElapsed, newTaskElapsed, userId) {
   const batch = writeBatch(db)
 
   // Pause the currently running task
@@ -168,9 +168,9 @@ export async function switchTimer(newTaskId, currentlyRunningTaskId, currentRunn
     })
   }
 
-  // Set new active timer
   batch.set(doc(db, 'activeTimer', 'current'), {
     taskId: newTaskId,
+    userId,
     startedAt: serverTimestamp(),
   })
 

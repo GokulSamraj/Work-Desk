@@ -81,6 +81,32 @@
             <span class="text-xs text-surface-400">Assigned by <strong class="text-surface-200">{{ authStore.user?.name }}</strong> (you)</span>
           </div>
 
+          <!-- Counter (optional) -->
+          <div>
+            <label class="flex items-center gap-2 mb-2 cursor-pointer">
+              <input type="checkbox" v-model="form.hasCounter" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+              <span class="label mb-0">Counter</span>
+            </label>
+            <div v-if="form.hasCounter" class="flex items-center gap-1">
+              <button
+                type="button"
+                @click="form.counter = Math.max(0, form.counter - 1)"
+                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors text-lg font-medium"
+              >−</button>
+              <input
+                v-model.number="form.counter"
+                type="number"
+                min="0"
+                class="w-20 h-9 text-center rounded-lg border border-gray-300 bg-white text-gray-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              />
+              <button
+                type="button"
+                @click="form.counter = (form.counter || 0) + 1"
+                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors text-lg font-medium"
+              >+</button>
+            </div>
+          </div>
+
           <div v-if="error" class="flex items-center gap-2 p-3 bg-red-900/20 border border-red-800/50 rounded-lg">
             <AlertCircle :size="14" class="text-red-400 shrink-0" />
             <p class="text-xs text-red-400">{{ error }}</p>
@@ -122,6 +148,8 @@ const form = ref({
   priority: 'Medium',
   status: 'To Do',
   dueDate: '',
+  counter: 0,
+  hasCounter: false,
 })
 
 onMounted(async () => {
@@ -151,6 +179,7 @@ async function handleSubmit() {
       priority: form.value.priority,
       status: form.value.status,
       dueDate: form.value.dueDate || null,
+      counter: form.value.hasCounter ? (form.value.counter || 0) : null,
       lastUpdatedBy: authStore.user.name,
     }
 

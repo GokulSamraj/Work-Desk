@@ -11,12 +11,12 @@
           {{ formatTimer(totalTimeUtilized) }}
         </span>
         <!-- Running task indicator -->
-        <div v-if="tasksStore.activeTimer" class="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-xs font-semibold text-emerald-700 truncate max-w-[140px]">
+        <div v-if="tasksStore.myActiveTimer" class="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+          <span class="text-xs font-semibold text-indigo-700 truncate max-w-[140px]">
             {{ runningTask?.title }}
           </span>
-          <span class="font-mono text-xs text-emerald-700 tabular-nums">{{ formatTimer(tasksStore.getDisplayTime(runningTask)) }}</span>
+          <span class="font-mono text-xs text-indigo-700 tabular-nums">{{ formatTimer(tasksStore.getDisplayTime(runningTask)) }}</span>
         </div>
       </div>
     </template>
@@ -91,6 +91,16 @@
 
         <div class="flex-1"></div>
 
+        <!-- Sort -->
+        <select v-model="sortBy" class="select py-1.5 text-sm w-40">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="dueDate">Due Date</option>
+          <option value="priority">Priority</option>
+          <option value="title">Title A-Z</option>
+          <option value="timer">Most Tracked</option>
+        </select>
+
         <!-- View toggle -->
         <div class="flex items-center bg-surface-800 rounded-lg p-1 gap-1">
           <button @click="toggleViewMode('board')" :class="['p-1.5 rounded-md transition-colors', viewMode === 'board' ? 'bg-surface-700 shadow-sm text-surface-100' : 'text-surface-500 hover:text-surface-300']">
@@ -132,7 +142,7 @@
               @click="openTask(task.id)"
               @start-timer="tasksStore.handleStartTimer"
               @pause-timer="tasksStore.handlePauseTimer"
-              @stop-timer="tasksStore.handleStopTimer"
+              @reset-timer="tasksStore.handleStopTimer"
             />
 
             <div
@@ -147,10 +157,11 @@
 
       <!-- LIST VIEW -->
       <div v-else class="bg-surface-800 border border-surface-700 rounded-xl overflow-x-auto">
-        <table class="w-full text-left min-w-[800px]">
+        <table class="w-full text-left min-w-[950px]">
           <thead>
             <tr class="border-b border-surface-700 bg-surface-800/50">
               <th class="text-left px-5 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wide">Task</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wide">Description</th>
               <th class="text-left px-5 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wide">Assigned To</th>
               <th class="text-left px-5 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wide">Priority</th>
               <th class="text-left px-5 py-3 text-xs font-semibold text-surface-500 uppercase tracking-wide">Status</th>
@@ -164,16 +175,19 @@
               v-for="task in filteredTasks"
               :key="task.id"
               :class="[
-                'hover:bg-surface-700/30 transition-colors cursor-pointer',
-                tasksStore.activeTimer?.taskId === task.id ? 'bg-brand-900/10' : ''
+                'hover:bg-gray-50 transition-colors cursor-pointer',
+                tasksStore.myActiveTimer?.taskId === task.id ? 'bg-indigo-50' : ''
               ]"
               @click="openTask(task.id)"
             >
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-2">
-                  <span v-if="tasksStore.activeTimer?.taskId === task.id" class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse shrink-0"></span>
+                  <span v-if="tasksStore.myActiveTimer?.taskId === task.id" class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0"></span>
                   <span class="text-sm font-medium text-surface-100 line-clamp-1">{{ task.title }}</span>
                 </div>
+              </td>
+              <td class="px-5 py-3.5">
+                <span class="text-xs text-surface-400 line-clamp-2">{{ task.description || '—' }}</span>
               </td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-2">
@@ -195,21 +209,21 @@
               </td>
               <td class="px-5 py-3.5" @click.stop>
                 <div class="flex items-center gap-2">
-                  <span :class="['font-mono text-xs tabular-nums font-medium', tasksStore.activeTimer?.taskId === task.id ? 'text-brand-400' : 'text-surface-400']">
+                  <span :class="['font-mono text-xs tabular-nums font-medium', tasksStore.myActiveTimer?.taskId === task.id ? 'text-indigo-600' : 'text-gray-500']">
                     {{ formatTimer(tasksStore.getDisplayTime(task)) }}
                   </span>
                   <template v-if="authStore.user?.role === 'admin' || task.assignedTo === authStore.user?.uid">
                     <button
-                      v-if="tasksStore.activeTimer?.taskId !== task.id"
+                      v-if="tasksStore.myActiveTimer?.taskId !== task.id"
                     @click="tasksStore.handleStartTimer(task.id)"
-                    class="w-5 h-5 rounded bg-brand-900/50 hover:bg-brand-900 text-brand-400 flex items-center justify-center transition-colors"
+                    class="w-5 h-5 rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-600 flex items-center justify-center transition-colors"
                   >
                     <Play :size="9" fill="currentColor" />
                   </button>
                   <button
                     v-else
                     @click="tasksStore.handlePauseTimer(task.id)"
-                    class="w-5 h-5 rounded bg-amber-900/30 hover:bg-amber-900/50 text-amber-400 flex items-center justify-center transition-colors"
+                    class="w-5 h-5 rounded bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
                   >
                     <Pause :size="9" fill="currentColor" />
                   </button>
@@ -224,7 +238,7 @@
               </td>
             </tr>
             <tr v-if="filteredTasks.length === 0">
-              <td colspan="7" class="px-5 py-12 text-center text-sm text-surface-500">
+              <td colspan="8" class="px-5 py-12 text-center text-sm text-surface-500">
                 <div class="flex flex-col items-center gap-3">
                   <ClipboardList :size="32" class="text-surface-700" />
                   <p>No tasks found</p>
@@ -245,7 +259,7 @@
 </template>
 
 <script setup>
-import { Search, Plus, X, LayoutGrid, List, Play, Pause, ClipboardList, Calendar, Clock } from 'lucide-vue-next'
+import { Search, Plus, X, LayoutGrid, List, Play, Pause, ClipboardList, Calendar, Clock, ArrowUpDown } from 'lucide-vue-next'
 import AppLayout from '~/components/AppLayout.vue'
 import TaskCard from '~/components/TaskCard.vue'
 import CreateTaskModal from '~/components/CreateTaskModal.vue'
@@ -275,8 +289,9 @@ const search = ref('')
 const filterAssignee = ref('')
 const filterStatus = ref('')
 const filterPriority = ref('')
-const filterDate = ref('today') // Default based on user preference
+const filterDate = ref('today') // Default: today, past due, and future
 const filterDateRange = ref(null)
+const sortBy = ref('newest')
 const userList = ref([])
 
 onMounted(async () => {
@@ -312,7 +327,7 @@ async function toggleViewMode(mode) {
 }
 
 const hasFilters = computed(() =>
-  search.value || filterAssignee.value || filterStatus.value || filterPriority.value || filterDate.value !== 'today' || (filterDate.value === 'custom' && filterDateRange.value !== null)
+  search.value || filterAssignee.value || filterStatus.value || filterPriority.value || filterDate.value !== 'today' || sortBy.value !== 'newest' || (filterDate.value === 'custom' && filterDateRange.value !== null)
 )
 
 function clearFilters() {
@@ -322,20 +337,26 @@ function clearFilters() {
   filterPriority.value = ''
   filterDate.value = 'today'
   filterDateRange.value = null
+  sortBy.value = 'newest'
+}
+
+function timeToMs(t) {
+  return t?.toMillis?.() ? t.toMillis() : (t ? new Date(t).getTime() : 0)
 }
 
 const filteredTasks = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
-  return tasksStore.tasks.filter(task => {
+  const priorityOrder = { 'Urgent': 0, 'High': 1, 'Medium': 2, 'Low': 3 }
+
+  let result = tasksStore.tasks.filter(task => {
     // Date Filtering Logic
     if (task.dueDate) {
       const taskDate = new Date(task.dueDate)
       taskDate.setHours(0, 0, 0, 0)
-      
+
       if (filterDate.value === 'today') {
-        if (taskDate > today) return false
+        // Show all tasks: today, past due, and future
       } else if (filterDate.value === 'future') {
         if (taskDate <= today) return false
       } else if (filterDate.value === 'custom') {
@@ -344,7 +365,7 @@ const filteredTasks = computed(() => {
           start.setHours(0, 0, 0, 0)
           const end = new Date(filterDateRange.value[1])
           end.setHours(23, 59, 59, 999)
-          
+
           if (taskDate < start || taskDate > end) return false
         }
       }
@@ -364,6 +385,31 @@ const filteredTasks = computed(() => {
     }
     return true
   })
+
+  // Apply sorting
+  result = [...result].sort((a, b) => {
+    switch (sortBy.value) {
+      case 'newest':
+        return timeToMs(b.createdAt) - timeToMs(a.createdAt)
+      case 'oldest':
+        return timeToMs(a.createdAt) - timeToMs(b.createdAt)
+      case 'dueDate': {
+        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+        return da - db
+      }
+      case 'priority':
+        return (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99)
+      case 'title':
+        return (a.title || '').localeCompare(b.title || '')
+      case 'timer':
+        return (b.totalElapsed || 0) - (a.totalElapsed || 0)
+      default:
+        return 0
+    }
+  })
+
+  return result
 })
 
 const totalTimeUtilized = computed(() => {
@@ -382,8 +428,8 @@ const tasksByStatus = computed(() => {
 })
 
 const runningTask = computed(() =>
-  tasksStore.activeTimer
-    ? tasksStore.tasks.find(t => t.id === tasksStore.activeTimer.taskId)
+  tasksStore.myActiveTimer
+    ? tasksStore.tasks.find(t => t.id === tasksStore.myActiveTimer.taskId)
     : null
 )
 

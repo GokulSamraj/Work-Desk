@@ -123,19 +123,19 @@
       </div>
 
       <!-- Timer Card -->
-      <div :class="['bg-surface-800 border border-surface-700 rounded-xl p-5', isRunning ? 'ring-2 ring-brand-500/30 timer-running' : '']">
+      <div :class="['bg-white border rounded-xl p-5 shadow-sm', isRunning ? 'ring-2 ring-indigo-200 timer-running' : 'border-gray-200']">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <Timer :size="16" :class="isRunning ? 'text-brand-400' : 'text-surface-500'" />
-            <h3 class="font-semibold text-surface-100 text-sm">Time Tracker</h3>
-            <span v-if="isRunning" class="badge bg-brand-900/50 text-brand-400 border border-brand-800 text-[10px] animate-timer-tick">RUNNING</span>
-            <span v-else-if="task.timerStatus === 'paused'" class="badge bg-amber-900/30 text-amber-400 border border-amber-800 text-[10px]">PAUSED</span>
+            <Timer :size="16" :class="isRunning ? 'text-indigo-500' : 'text-gray-400'" />
+            <h3 class="font-semibold text-gray-900 text-sm">Time Tracker</h3>
+            <span v-if="isRunning" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-bold border border-indigo-200 animate-pulse">RUNNING</span>
+            <span v-else-if="task.timerStatus === 'paused'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-200">PAUSED</span>
           </div>
         </div>
 
         <!-- Big timer display -->
         <div class="flex items-center gap-6 mb-5">
-          <div :class="['font-mono text-4xl font-bold tabular-nums', isRunning ? 'text-brand-400' : 'text-surface-300']">
+          <div :class="['font-mono text-4xl font-bold tabular-nums', isRunning ? 'text-indigo-600' : 'text-gray-700']">
             {{ formatTimer(displayTime) }}
           </div>
           <div v-if="authStore.user?.role === 'admin' || task.assignedTo === authStore.user?.uid" class="flex items-center gap-2">
@@ -143,7 +143,7 @@
             <button
               v-if="!isRunning"
               @click="tasksStore.handleStartTimer(task.id)"
-              class="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors"
+              class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors"
             >
               <Play :size="14" fill="white" />
               {{ task.timerStatus === 'paused' ? 'Resume' : 'Start' }}
@@ -157,13 +157,13 @@
               Pause
             </button>
 
-            <!-- Stop/Reset -->
+            <!-- Reset -->
             <button
-              v-if="task.timerStatus !== 'stopped'"
-              @click="tasksStore.handleStopTimer(task.id)"
-              class="flex items-center gap-2 px-4 py-2 bg-surface-700 hover:bg-red-900/30 hover:text-red-400 text-surface-400 rounded-lg text-sm font-semibold transition-colors"
+              v-if="task.timerStatus !== 'stopped' && displayTime > 0"
+              @click="showResetConfirm = true"
+              class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:border-red-300 hover:bg-red-50 hover:text-red-600 text-gray-500 rounded-lg text-sm font-semibold transition-colors"
             >
-              <Square :size="14" fill="currentColor" />
+              <RotateCcw :size="14" />
               Reset
             </button>
           </div>
@@ -171,7 +171,7 @@
       </div>
 
       <!-- Info Grid -->
-      <div class="grid grid-cols-2 gap-5">
+      <div class="grid grid-cols-3 gap-5">
         <!-- Assignee -->
         <div class="bg-surface-800 border border-surface-700 rounded-xl p-5">
           <h3 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-3">Assignment</h3>
@@ -217,11 +217,36 @@
               </div>
               <div v-else class="flex items-center gap-1">
                 <input v-model="editDue" type="date" class="input py-0.5 px-2 text-xs w-36" />
-                <button @click="saveDue" class="text-brand-400 hover:text-brand-300 p-0.5"><Check :size="14" /></button>
+                <button @click="saveDue" class="text-indigo-500 hover:text-indigo-400 p-0.5"><Check :size="14" /></button>
                 <button @click="editingDue = false" class="text-surface-500 hover:text-surface-300 p-0.5"><X :size="14" /></button>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Counter -->
+        <div class="bg-surface-800 border border-surface-700 rounded-xl p-5">
+          <h3 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-3">Counter</h3>
+          <div v-if="task.counter != null">
+            <div class="flex items-center gap-1">
+              <button
+                @click="updateCounter(Math.max(0, (task.counter || 0) - 1))"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-700 bg-surface-900 text-surface-300 hover:bg-surface-700 transition-colors text-base font-medium"
+              >−</button>
+              <input
+                :value="task.counter"
+                @change="updateCounter(Math.max(0, parseInt($event.target.value) || 0))"
+                type="number"
+                min="0"
+                class="w-16 h-8 text-center rounded-lg border border-surface-700 bg-surface-900 text-surface-100 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              />
+              <button
+                @click="updateCounter((task.counter || 0) + 1)"
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-surface-700 bg-surface-900 text-surface-300 hover:bg-surface-700 transition-colors text-base font-medium"
+              >+</button>
+            </div>
+          </div>
+          <p v-else class="text-xs text-surface-600 italic">No counter set</p>
         </div>
       </div>
     </div>
@@ -229,16 +254,34 @@
     <!-- Delete Confirm Modal -->
     <Teleport to="body">
       <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-        <div class="modal-content max-w-sm bg-surface-800 border border-surface-700">
+        <div class="modal-content max-w-sm bg-white border border-gray-200 shadow-xl">
           <div class="p-6 text-center">
-            <div class="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-              <Trash2 :size="22" class="text-red-400" />
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 :size="22" class="text-red-600" />
             </div>
-            <h3 class="font-bold text-surface-50 mb-2">Delete Task</h3>
-            <p class="text-sm text-surface-400 mb-6">This task will be permanently deleted. This cannot be undone.</p>
+            <h3 class="font-bold text-gray-900 mb-2">Delete Task</h3>
+            <p class="text-sm text-gray-500 mb-6">This task will be permanently deleted. This cannot be undone.</p>
             <div class="flex gap-3">
               <button @click="showDeleteConfirm = false" class="btn-secondary flex-1 justify-center">Cancel</button>
               <button @click="handleDeleteTask" class="btn-danger flex-1 justify-center">Delete Task</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Timer Confirm Modal -->
+      <div v-if="showResetConfirm" class="modal-overlay" @click.self="showResetConfirm = false">
+        <div class="modal-content max-w-sm bg-white border border-gray-200 shadow-xl">
+          <div class="p-6 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <RotateCcw :size="22" class="text-red-600" />
+            </div>
+            <h3 class="font-bold text-gray-900 mb-2">Reset Timer</h3>
+            <p class="text-sm text-gray-500 mb-1">This will reset the tracked time to zero.</p>
+            <p class="text-sm font-mono font-bold text-gray-700 mb-6">{{ formatTimer(displayTime) }} will be lost.</p>
+            <div class="flex gap-3">
+              <button @click="showResetConfirm = false" class="btn-secondary flex-1 justify-center">Cancel</button>
+              <button @click="handleResetTimer" class="btn-danger flex-1 justify-center">Reset Timer</button>
             </div>
           </div>
         </div>
@@ -250,7 +293,7 @@
 <script setup>
 import {
   ChevronRight, ChevronDown, Pencil, Trash2, Timer, Play, Pause, Square,
-  Loader2, Check, X
+  Loader2, Check, X, RotateCcw
 } from 'lucide-vue-next'
 import AppLayout from '~/components/AppLayout.vue'
 import { useTasksStore } from '~/stores/tasks'
@@ -279,6 +322,7 @@ const loading = ref(true)
 const showPriorityPicker = ref(false)
 const showStatusPicker = ref(false)
 const showDeleteConfirm = ref(false)
+const showResetConfirm = ref(false)
 
 const editingTitle = ref(false)
 const editTitle = ref('')
@@ -312,7 +356,7 @@ onMounted(() => {
 
 onUnmounted(() => { if (unsubscribe) unsubscribe() })
 
-const isRunning = computed(() => tasksStore.activeTimer?.taskId === task.value?.id)
+const isRunning = computed(() => tasksStore.myActiveTimer?.taskId === task.value?.id)
 const displayTime = computed(() => task.value ? tasksStore.getDisplayTime(task.value) : 0)
 const isOverdue = computed(() => {
   if (!task.value?.dueDate) return false
@@ -346,6 +390,10 @@ async function saveDue() {
   editingDue.value = false
 }
 
+async function updateCounter(value) {
+  await updateField('counter', value)
+}
+
 async function updateField(field, value) {
   await updateTask(route.params.id, {
     [field]: value,
@@ -355,6 +403,11 @@ async function updateField(field, value) {
 
 function confirmDeleteTask() {
   showDeleteConfirm.value = true
+}
+
+async function handleResetTimer() {
+  showResetConfirm.value = false
+  await tasksStore.handleStopTimer(task.value.id)
 }
 
 async function handleDeleteTask() {

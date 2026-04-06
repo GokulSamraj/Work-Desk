@@ -15,6 +15,15 @@ export const useTasksStore = defineStore('tasks', () => {
   let unsubTasks = null
   let unsubTimer = null
 
+  const myActiveTimer = computed(() => {
+    const authStore = useAuthStore()
+    if (!activeTimer.value || !authStore.user) return null
+    if (activeTimer.value.userId && activeTimer.value.userId !== authStore.user.uid) return null
+    return activeTimer.value
+  })
+
+  let localStartTime = null // records Date.now() at start for immediate ticking
+
   function init() {
     unsubTasks = subscribeToTasks((data) => {
       tasks.value = data
@@ -27,14 +36,21 @@ export const useTasksStore = defineStore('tasks', () => {
       if (localTickInterval.value) clearInterval(localTickInterval.value)
 
       if (data?.taskId) {
-        // Start local ticking
-        const startedAt = data.startedAt?.toMillis?.() || Date.now()
+        // If we already started ticking locally (user clicked start), keep our
+        // precise local start time. Otherwise fall back to the server timestamp.
+        const startedAt = localStartTime || data.startedAt?.toMillis?.() || Date.now()
+        localStartTime = null
         localTickInterval.value = setInterval(() => {
           localElapsed.value = {
             ...localElapsed.value,
             [data.taskId]: Date.now() - startedAt
           }
         }, 1000)
+        // Emit first tick immediately so the UI updates without a 1s delay
+        localElapsed.value = {
+          ...localElapsed.value,
+          [data.taskId]: Date.now() - startedAt
+        }
       }
     })
   }
@@ -42,7 +58,7 @@ export const useTasksStore = defineStore('tasks', () => {
   function getDisplayTime(task) {
     if (!task) return 0
     const base = task.totalElapsed || 0
-    if (task.timerStatus === 'running' && activeTimer.value?.taskId === task.id) {
+    if (task.timerStatus === 'running' && myActiveTimer.value?.taskId === task.id) {
       return base + (localElapsed.value[task.id] || 0)
     }
     return base
@@ -52,18 +68,20 @@ export const useTasksStore = defineStore('tasks', () => {
     const task = tasks.value.find(t => t.id === taskId)
     if (!task) return
 
-    const runningTaskId = activeTimer.value?.taskId
+    const authStore = useAuthStore()
+    const userId = authStore.user?.uid
+    const runningTaskId = myActiveTimer.value?.taskId
 
     if (runningTaskId && runningTaskId !== taskId) {
-      // Pause the currently running task first
       const runningTask = tasks.value.find(t => t.id === runningTaskId)
       const runningElapsed = getDisplayTime(runningTask)
-      await switchTimer(taskId, runningTaskId, runningElapsed, task.totalElapsed || 0)
+      await switchTimer(taskId, runningTaskId, runningElapsed, task.totalElapsed || 0, userId)
     } else {
-      await startTimer(taskId, task.totalElapsed || 0)
+      // Start ticking immediately — don't wait for Firestore round-trip
+      localStartTime = Date.now()
+      await startTimer(taskId, task.totalElapsed || 0, userId)
     }
 
-    const authStore = useAuthStore()
     if (authStore.user) {
       logAction(authStore.user.uid, authStore.user.name, 'timer_started', `Started tracking time for task: ${task.title}`).catch(()=>{})
     }
@@ -83,8 +101,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function handleStopTimer(taskId) {
     const task = tasks.value.find(t => t.id === taskId)
     if (!task) return
-    const elapsed = getDisplayTime(task) // Don't wipe the tracked time
-    await stopTimer(taskId, elapsed)
+    await stopTimer(taskId, 0)
     const updated = { ...localElapsed.value }
     delete updated[taskId]
     localElapsed.value = updated
@@ -97,7 +114,7 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   return {
-    tasks, activeTimer, localElapsed,
+    tasks, activeTimer, myActiveTimer, localElapsed,
     init, cleanup, getDisplayTime,
     createTask, updateTask, deleteTask,
     handleStartTimer, handlePauseTimer, handleStopTimer

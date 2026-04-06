@@ -50,9 +50,9 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
-    // Active timer - global single doc
+    // Active timer - visible only to the user who started it
     match /activeTimer/{docId} {
-      allow read: if isAuth();
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
       allow write: if isAuth() && isActive();
     }
   }
