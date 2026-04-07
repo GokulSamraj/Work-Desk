@@ -304,18 +304,21 @@ onMounted(async () => {
   filterAssignee.value = authStore.user?.uid || '' // Default filter for users should be their user name
 })
 
-watch([filterAssignee, filterStatus, filterPriority, filterDate, filterDateRange], () => {
-  if (!authStore.user) return
+watchEffect(() => {
+  if (!authStore.user || userList.value.length === 0) return
   let rangeStr = ''
   if (filterDate.value === 'custom' && filterDateRange.value?.length) {
     rangeStr = ' ' + new Date(filterDateRange.value[0]).toLocaleDateString() + ' - ' + new Date(filterDateRange.value[1]).toLocaleDateString()
   }
+  const assigneeName = filterAssignee.value
+    ? (userList.value.find(u => u.uid === filterAssignee.value)?.name || filterAssignee.value)
+    : 'All'
   logAction(
-    authStore.user.uid, 
-    authStore.user.name, 
-    'filter_changed', 
-    `Filters: [Assignee: ${filterAssignee.value || 'All'}], [Status: ${filterStatus.value || 'All'}], [Priority: ${filterPriority.value || 'All'}], [Date: ${filterDate.value}${rangeStr}]`
-  ).catch(()=>{})
+    authStore.user.uid,
+    authStore.user.name,
+    'filter_changed',
+    `Filters: [Assignee: ${assigneeName}], [Status: ${filterStatus.value || 'All'}], [Priority: ${filterPriority.value || 'All'}], [Date: ${filterDate.value}${rangeStr}]`
+  ).catch(() => {})
 })
 
 const getUserPhoto = (uid) => {
