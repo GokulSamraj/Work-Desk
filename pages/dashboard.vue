@@ -358,6 +358,19 @@ const filteredTasks = computed(() => {
   const priorityOrder = { 'Urgent': 0, 'High': 1, 'Medium': 2, 'Low': 3 }
 
   let result = tasksStore.tasks.filter(task => {
+    // Hide completed tasks from previous days (only when viewing "Today" filter)
+    if (task.status === 'Done' && filterDate.value === 'today') {
+      const completedAt = task.completedAt
+      if (completedAt) {
+        const completedDate = new Date(completedAt)
+        completedDate.setHours(0, 0, 0, 0)
+        if (completedDate < today) return false
+      } else {
+        // No completedAt means it was done before this feature — hide it
+        return false
+      }
+    }
+
     // Date Filtering Logic
     if (task.dueDate) {
       const taskDate = new Date(task.dueDate)
