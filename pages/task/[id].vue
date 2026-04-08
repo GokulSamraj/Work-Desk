@@ -395,10 +395,14 @@ async function updateCounter(value) {
 }
 
 async function updateField(field, value) {
-  await updateTask(route.params.id, {
+  const updates = {
     [field]: value,
     lastUpdatedBy: authStore.user.name,
-  })
+  }
+  if (field === 'status' && value === 'Done') {
+    updates.completedAt = new Date()
+  }
+  await updateTask(route.params.id, updates)
 }
 
 function confirmDeleteTask() {
