@@ -22,7 +22,8 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuth();
-      allow create: if isAdmin();
+      // Allow a user to create their own doc (first-login auto-provisioning) or an admin to create any
+      allow create: if isAdmin() || (isAuth() && request.auth.uid == userId);
       allow update: if isAdmin() || request.auth.uid == userId;
       allow delete: if isAdmin();
     }

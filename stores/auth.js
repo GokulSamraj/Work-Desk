@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { loginWithPopupCompact, resolveUserProfile, signOut, onAuthChange } from '~/firebase/auth'
+import { loginWithCredentials, resolveUserProfile, signOut, onAuthChange } from '~/firebase/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -17,7 +17,6 @@ export const useAuthStore = defineStore('auth', () => {
       if (firebaseUser) {
         try {
           const profile = await resolveUserProfile(firebaseUser)
-          
           if (profile && profile.active !== false) {
             user.value = profile
           } else {
@@ -25,9 +24,9 @@ export const useAuthStore = defineStore('auth', () => {
             await signOut()
           }
         } catch (err) {
-          console.error("Auth provisioning error:", err)
-          if (err.message === 'timeout' || err.message.includes('offline')) {
-            error.value = "Taking unusually long to connect to database. It might be blocked by an anti-tracker plugin."
+          console.error('Auth provisioning error:', err)
+          if (err.message?.includes('offline')) {
+            error.value = 'Taking unusually long to connect to database. It might be blocked by an anti-tracker plugin.'
           }
           user.value = null
         }
@@ -38,10 +37,10 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  async function loginWithGoogle() {
+  async function login(username, password) {
     error.value = null
     try {
-      const profile = await loginWithPopupCompact()
+      const profile = await loginWithCredentials(username, password)
       user.value = profile
       return profile
     } catch (e) {
@@ -59,5 +58,5 @@ export const useAuthStore = defineStore('auth', () => {
     if (unsubscribe) unsubscribe()
   }
 
-  return { user, loading, error, isAuthenticated, isAdmin, loginWithGoogle, logout, initAuth, cleanup }
+  return { user, loading, error, isAuthenticated, isAdmin, login, logout, initAuth, cleanup }
 })

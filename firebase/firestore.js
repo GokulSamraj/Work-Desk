@@ -28,15 +28,14 @@ export async function deleteUser(uid) {
   await deleteDoc(doc(db, 'users', uid))
 }
 
-export async function createUserRecord({ name, email, role = 'user' }) {
-  await addDoc(collection(db, 'users'), {
+export async function createUserRecord({ uid, name, email, role = 'user' }) {
+  await setDoc(doc(db, 'users', uid), {
+    uid,
     name,
-    email: email.toLowerCase(),
+    email: email.toLowerCase().trim(),
     role,
     active: true,
     createdAt: serverTimestamp(),
-    provider: 'google',
-    photoURL: null,
   })
 }
 

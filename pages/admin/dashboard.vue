@@ -182,7 +182,11 @@
             </div>
             <div class="space-y-1.5">
               <label class="label">Email Address</label>
-              <input id="new-email" v-model="newUser.email" type="email" placeholder="john@company.com" required class="input" />
+              <input id="new-email" v-model="newUser.email" type="email" placeholder="john@example.com" required class="input" autocomplete="off" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="label">Password</label>
+              <input id="new-password" v-model="newUser.password" type="password" placeholder="Set a password" required class="input" autocomplete="new-password" />
             </div>
 
             <div class="space-y-1.5">
@@ -239,6 +243,7 @@ import { UserPlus, Search, ShieldCheck, UserX, UserCheck, Trash2, X, AlertCircle
 import AppLayout from '~/components/AppLayout.vue'
 import { useAuthStore } from '~/stores/auth'
 import { subscribeToUsers, updateUser, deleteUser, createUserRecord, subscribeToTasks } from '~/firebase/firestore'
+import { createAuthUser } from '~/firebase/auth'
 import { avatarColor, initials, formatDate } from '~/utils/helpers'
 
 definePageMeta({
@@ -263,7 +268,7 @@ const deleteLoading = ref(false)
 const createError = ref('')
 const isTasksLoaded = ref(false)
 
-const newUser = ref({ name: '', email: '', role: 'user' })
+const newUser = ref({ name: '', email: '', password: '', role: 'user' })
 
 let unsubscribeUsers = null
 let unsubscribeTasks = null
@@ -358,9 +363,10 @@ async function handleCreateUser() {
   createError.value = ''
   createLoading.value = true
   try {
-    await createUserRecord({ name: newUser.value.name, email: newUser.value.email, role: newUser.value.role })
+    const uid = await createAuthUser(newUser.value.email, newUser.value.password)
+    await createUserRecord({ uid, name: newUser.value.name, email: newUser.value.email, role: newUser.value.role })
     showCreateModal.value = false
-    newUser.value = { name: '', email: '', role: 'user' }
+    newUser.value = { name: '', email: '', password: '', role: 'user' }
   } catch (e) {
     createError.value = e.message || 'Failed to create user.'
   } finally {

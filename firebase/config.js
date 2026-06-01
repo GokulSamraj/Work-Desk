@@ -6,7 +6,7 @@ import { initializeFirestore } from 'firebase/firestore'
 
 // Firebase only runs on the client
 // Use VITE_ prefixed vars which Nuxt/Vite exposes on the client
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
